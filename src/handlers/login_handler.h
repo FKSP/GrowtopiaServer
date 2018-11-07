@@ -5,6 +5,8 @@
 #include "../packets/gamepacket.h"
 #include "../objects/player.h"
 
-void handle_login(player* player, std::string data);
+namespace growtopia::handlers {
+    void handle_login(growtopia::objects::player* player, std::string data);
+}
 
 #endif //GROWTOPIASERVER_LOGINHANDLER_H

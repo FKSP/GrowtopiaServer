@@ -16,7 +16,7 @@ public:
     gamepacket* write(float val1, float val2);
     gamepacket* write(float val1);
 
-    gamepacket* write(int val1, bool x);
+    gamepacket* write(int val1, bool x = false);
 
     gamepacket* write(std::string val1);
 

@@ -18,7 +18,7 @@ add_executable(GrowtopiaServer src/main.cpp
         src/packets/gamepacket.cpp src/packets/gamepacket.h
         src/handlers/PacketHandler.cpp src/handlers/PacketHandler.h
         src/helpers/login_parser.cpp src/helpers/login_parser.h
-        src/handlers/LoginHandler.cpp src/handlers/LoginHandler.h
-        src/database/world_db.cpp src/database/world_db.h)
+        src/handlers/login_handler.cpp src/handlers/login_handler.h
+        src/database/world_db.cpp src/database/world_db.h src/helpers/random.h src/helpers/string.cpp src/helpers/string.h src/helpers/system.cpp src/helpers/system.h src/enums/block_types.h)
 
 target_link_libraries(GrowtopiaServer enet)

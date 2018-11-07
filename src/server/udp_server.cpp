@@ -4,6 +4,7 @@
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
 
 using namespace std;
+using namespace growtopia;
 
 udp_server::udp_server(uint16_t port) {
     enet_initialize();
@@ -16,14 +17,20 @@ void udp_server::handle_event(ENetEvent* event) {
 
     switch(event->type) {
         case ENET_EVENT_TYPE_CONNECT:
-            peer->data = new player(peer);
+            peer->data = new objects::player(peer);
             send_data(peer, 1, nullptr, 0);
             break;
         case ENET_EVENT_TYPE_RECEIVE:
-            handle_packets(peer, event->packet, (player*)peer->data);
+            if (((objects::player*)peer->data)->is_updating)
+            {
+                cout << "packet drop" << endl;
+                break;
+            }
+
+            handle_packets(this->server, peer, event->packet, (objects::player*)peer->data);
             break;
         case ENET_EVENT_TYPE_DISCONNECT:
-            delete (player*)peer->data;
+            delete (objects::player*)peer->data;
             peer->data = nullptr;
             break;
         default: break;
@@ -51,7 +58,18 @@ void udp_server::run(size_t slots) {
     printf("Server should be listening at port %d\n", this->port);
     while (true)
         while (enet_host_service(server, &event, 1000) > 0)
-            this->handle_event(&event);
+            try {
+                this->handle_event(&event);
+            } catch (const runtime_error& re) {
+                enet_peer_disconnect_later(event.peer, 0);
+                cerr << "Runtime error: " << re.what() << endl;
+            } catch (const exception& ex) {
+                enet_peer_disconnect_later(event.peer, 0);
+                cerr << "Error occurred: " << ex.what() << endl;
+            } catch (...) {
+                enet_peer_disconnect_later(event.peer, 0);
+                cout << "Unknown failure occurred. Possible memory corruption" << endl;
+            }
 }
 
 void udp_server::send_data(ENetPeer* peer, int num, char* data, size_t len)
