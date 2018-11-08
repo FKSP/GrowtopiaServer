@@ -24,3 +24,37 @@ delayMS|0\n
 ```
 
 ```
+
+
+## List of all known packet names
+```
+OnReconnect
+OnSpawn
+OnRemove
+OnRequestWorldSelectMenu
+OnConsoleMessage
+OnTalkBubble
+OnTextOverlay
+OnDialogRequest
+OnStoreRequest
+OnStorePurchaseResult
+OnZoomCamera
+OnPinchMod
+OnFailedToEnterWorld
+SetHasGrowID
+OnInitialLogonAccepted
+OnSetBux
+OnParticleEffect
+OnItemEffect
+OnAddNotification
+OnForceTradeEnd
+OnTradeStatus
+OnDisableRemoveIAPScreen
+OnSendToServer
+OnToggleBetaMode
+OnSetBetaMode
+OnSetBetaSilent
+OnSendIAPConfirmation
+OnSetBaseWeather
+OnSetCurrentWeather
+```
