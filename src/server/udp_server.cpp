@@ -7,8 +7,6 @@ using namespace std;
 using namespace growtopia;
 
 udp_server::udp_server(uint16_t port) {
-    enet_initialize();
-
     this->port = port;
 }
 
@@ -42,6 +40,8 @@ void udp_server::run(size_t slots) {
     enet_address_set_host(&address, "0.0.0.0");
     address.port = this->port;
 
+    enet_initialize();
+
     this->server = enet_host_create(&address, slots, 10, 0, 0);
 
     if (this->server == nullptr)
@@ -58,8 +58,10 @@ void udp_server::run(size_t slots) {
     printf("Server should be listening at port %d\n", this->port);
     while (true)
         while (enet_host_service(server, &event, 1000) > 0)
+            this->handle_event(&event);
+            /*
             try {
-                this->handle_event(&event);
+
             } catch (const runtime_error& re) {
                 enet_peer_disconnect_later(event.peer, 0);
                 cerr << "Runtime error: " << re.what() << endl;
@@ -70,6 +72,7 @@ void udp_server::run(size_t slots) {
                 enet_peer_disconnect_later(event.peer, 0);
                 cout << "Unknown failure occurred. Possible memory corruption" << endl;
             }
+             */
 }
 
 void udp_server::send_data(ENetPeer* peer, int num, char* data, size_t len)

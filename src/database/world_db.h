@@ -9,12 +9,56 @@
 
 #include <enet/enet.h>
 #include <msgpack.hpp>
+#include <json.hpp>
+
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 
 #include "../helpers/random.h"
 #include "../helpers/system.h"
 #include "../helpers/string.h"
+#include "../helpers/compression.h"
+#include "../helpers/encoding.h"
+
 
 namespace growtopia::database::world {
+    enum ClothTypes {
+        HAIR,
+        SHIRT,
+        PANTS,
+        FEET,
+        FACE,
+        HAND,
+        BACK,
+        MASK,
+        NECKLACE,
+        NONE
+    };
+
+    enum BlockTypes {
+        FOREGROUND,
+        BACKGROUND,
+        SEED,
+        PAIN_BLOCK,
+        BEDROCK,
+        MAIN_DOOR,
+        SIGN,
+        DOOR,
+        CLOTHING,
+        FIST,
+        UNKNOWN
+    };
+    struct ItemDefinition {
+        int id;
+        std::string name;
+        int rarity;
+        int breakHits;
+        int growTime;
+        ClothTypes clothType;
+        BlockTypes blockType;
+        std::string description = "This item has no description.";
+    };
     class world_block {
     public:
         world_block() {
@@ -39,15 +83,12 @@ namespace growtopia::database::world {
         bool red;
         bool green;
         bool blue;
-
-        int to_bitwise();
-        MSGPACK_DEFINE(foreground, background, break_level, break_time, water, fire, glue, red, green, blue);
     };
     class world {
     public:
         world() {
             this->name = "NONE";
-            this->width = 100, this->height = 50;
+            this->width = 100, this->height = 60;
             this->joinable = true;
         }
         std::string name;
@@ -56,8 +97,6 @@ namespace growtopia::database::world {
         std::vector<world_block> blocks;
 
         int get_joined_peers(ENetHost *server);
-
-        MSGPACK_DEFINE(name, blocks, width, height, joinable, blocks);
 
         void save();
     };

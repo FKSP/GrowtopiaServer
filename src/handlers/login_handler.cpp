@@ -29,6 +29,8 @@ void handlers::handle_login(objects::player* player, string data) {
         }
     player->country = ldata.country;
 
+    player->display_name = player->user_name;
+
     for (char c : player->display_name) if (c < 0x20 || c>0x7A) player->display_name = "Bad characters in name, remove them!";
 
     if (player->country.length() > 4)

@@ -11,6 +11,14 @@
 #include "../database/world_db.h"
 
 namespace growtopia::objects {
+    struct inventory_item {
+        uint16_t item_id;
+        uint8_t item_count;
+    };
+    struct inventory {
+        std::vector<inventory_item> items;
+        int inv_size = 100;
+    };
     struct player_movement {
         int packet_type;
         int net_id;
@@ -22,6 +30,17 @@ namespace growtopia::objects {
         float y_speed;
         int punch_x;
         int punch_y;
+    };
+    struct clothing_info {
+        int hair = 0; // 0
+        int shirt = 0; // 1
+        int pants = 0; // 2
+        int feet = 0; // 3
+        int face = 0; // 4
+        int hand = 0; // 5
+        int back = 0; // 6
+        int mask = 0; // 7
+        int necklace = 0; // 8
     };
 
     class player {
@@ -36,6 +55,12 @@ namespace growtopia::objects {
 
         float posx;
         float posy;
+        inventory inv;
+        clothing_info clothing;
+        int skin_color = 0x42;
+
+        bool rotation_left = false;
+        bool join_update_clothes = false;
 
         explicit player(ENetPeer* peer);
 
@@ -44,17 +69,18 @@ namespace growtopia::objects {
 
         void send_world_list();
         void send_world(database::world::world *world);
+        void send_inventory();
         void send_console_message(std::string message);
         void send_items_db();
         void send_packet(gamepacket* packet);
         void send_raw_packet(int a1, void *packetData, size_t packetDataSize, void *a4, ENetPeer* peer, int packetFlag);
         void send_player_movement(player_movement& player_movement);
+        void send_action(std::string action);
+        void send_nothing_happend(int x, int y);
     private:
         bool loggedin = false;
     };
 
     void init_itemdb();
-    bool is_here(ENetPeer* peer, ENetPeer* peer2);
-    void on_peer_connect(ENetHost* server, ENetPeer* peer);
 }
 #endif //GROWTOPIASERVER_PLAYER_H

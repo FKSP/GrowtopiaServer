@@ -3,6 +3,7 @@
 using namespace std;
 using namespace growtopia;
 using namespace database;
+using json = nlohmann::json;
 
 vector<string> worlds;
 
@@ -10,24 +11,55 @@ const world::world world::get_world(string name) {
     world w;
     name = helpers::get_upper(name);
     
-    mkdir("worlds");
+    helpers::makedir("worlds");
 
-    ifstream world_file("worlds/" + name + ".wrld", ios::binary | ios::ate);
+    ifstream world_file("worlds/" + name + ".wrld", ios::binary);
+
 
     if (!world_file.good()) {
-        w = generate_world(name, 100, 50);
+        w = generate_world(name, 100, 60);
         w.save();
     } else {
-        ifstream::pos_type pos = world_file.tellg();
-        auto length = static_cast<size_t>(pos);
-        char *worldData = new char[length];
-        world_file.seekg(0, ios::beg);
-        world_file.read(worldData, length);
+        std::string data((std::istreambuf_iterator<char>(world_file)),
+                          std::istreambuf_iterator<char>());
+        std::stringstream compressed;
+        std::stringstream decompressed;
+        std::string decompressed_data;
 
-        msgpack::object_handle oh = msgpack::unpack(worldData, length);
+        boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
+        in.push(boost::iostreams::zlib_decompressor());
+        in.push(decompressed_data);
+        boost::iostreams::copy(in, compressed);
 
-        msgpack::object obj = oh.get();
-        obj.convert(w);
+        compressed << data;
+
+        cout << decompressed_data << endl;
+
+        json j = json::parse(decompressed_data);
+
+        cout << j;
+
+
+        /*
+        msgpack::object_handle oh;
+
+        oh.get().convert(w.name);
+        oh.get().convert(w.width);
+        oh.get().convert(w.height);
+
+        while(pac.next(oh)) {
+            world_block block;
+            oh.get().convert(block.foreground);
+            oh.get().convert(block.background);
+            oh.get().convert(block.water);
+            oh.get().convert(block.fire);
+            oh.get().convert(block.glue);
+            oh.get().convert(block.red);
+            oh.get().convert(block.green);
+            oh.get().convert(block.blue);
+            w.blocks.push_back(block);
+        }
+         */
     }
 
     worlds.push_back(w.name);
@@ -66,16 +98,45 @@ const world::world world::generate_world(string name, int width, int height) {
 }
 
 void world::world::save() {
-    ofstream out("worlds/" + helpers::get_upper(name) + ".wrld", istream::out | ios::binary);
+    ofstream out("worlds/" + helpers::get_upper(name) + ".wrld", ios::binary);
 
     msgpack::sbuffer buffer;
-    msgpack::packer<msgpack::sbuffer> pk(&buffer);
 
-    pk.pack(*this);
+    json blocks_array = json::array();
 
-    out.write(buffer.data(), buffer.size());
+    for (auto block : this->blocks) {
+        json jblock {
+                {"foreground", block.foreground},
+                {"background", block.background},
+                {"background", block.water},
+                {"background", block.fire},
+                {"background", block.glue},
+                {"background", block.red},
+                {"background", block.green},
+                {"background", block.blue},
+        };
+        blocks_array.push_back(jblock);
+    }
+
+    json j {
+            {"name", this->name},
+            {"width", this->width},
+            {"height", this->height},
+            {"joinable", this->joinable},
+            {"blocks", blocks_array}
+    };
+
+    boost::iostreams::filtering_ostream os = boost::iostreams::filtering_ostream();
+    os.push(boost::iostreams::zlib_compressor());
+
+    string x = j.dump();
+
+    os.push(*out.rdbuf());
+
+    os << j;
+
+    os.pop();
     out.close();
-    buffer.clear();
 }
 
 int world::world::get_joined_peers(ENetHost *server) {

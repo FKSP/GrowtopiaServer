@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <cstring>
 
 #include <enet/enet.h>
 

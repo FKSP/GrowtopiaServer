@@ -14,7 +14,7 @@ void objects::init_itemdb() {
 
     itemsDatSize = static_cast<int>(file.tellg());
 
-    itemsDat = new BYTE[60 + itemsDatSize];
+    itemsDat = new uint8_t[60 + itemsDatSize];
     string raw_data = "0400000010000000FFFFFFFF000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     for (int i = 0; i < raw_data.length(); i += 2)
     {
@@ -50,6 +50,8 @@ void objects::player::send_console_message(string message) {
 
 void objects::player::send_world_list() {
     if (!is_loggedin()) return;
+
+    this->joined_world = "";
 
     vector<database::world::world> worlds = database::world::get_random_worlds(12);
     string worldOffers = "default|";
@@ -99,7 +101,7 @@ void objects::player::send_world(database::world::world *world) {
     int allocMem = payloadLen + 2 + nameLen + 12 + (square * 8) + 4 + 16000;
     auto data = new uint8_t[allocMem];
     int zero = 0;
-    __int16 item = 0;
+    uint16_t item = 0;
     int smth = 0;
 
     for (int i = 0; i < raw_data.length(); i += 2) {
@@ -215,5 +217,63 @@ void objects::player::send_raw_packet(int a1, void *packetData, size_t packetDat
             enet_peer_send(peer, 0, p);
         }
     }
-    delete packetData;
+}
+
+void objects::player::send_action(std::string action) {
+    auto data = new uint8_t[5 + action.length()];
+    uint8_t zero = 0;
+    int type = 3;
+    memcpy(data, &type, 4);
+    memcpy(data + 4, action.c_str(), action.length());
+    memcpy(data + 4 + action.length(), &zero, 1);
+
+    ENetPacket* p = enet_packet_create(data,
+                                             5+action.length(),
+                                             ENET_PACKET_FLAG_RELIABLE);
+
+    enet_peer_send(this->peer, 0, p);
+}
+
+void objects::player::send_inventory() {
+    string raw_data = "0400000009A7379237BB2509E8E0EC04F8720B050000000000000000FBBB0000010000007D920100FDFDFDFD04000000040000000000000000000000000000000000";
+    int inventoryLen = static_cast<int>(this->inv.items.size());
+    int packetLen = static_cast<int>((raw_data.length() / 2) + (inventoryLen * 4) + 4);
+    uint8_t* data = new uint8_t[packetLen];
+    for (int i = 0; i < raw_data.length(); i += 2)
+    {
+        char x = gamepacket::ch2n(raw_data[i]);
+        x = x << 4;
+        x += gamepacket::ch2n(raw_data[i + 1]);
+        memcpy(data + (i / 2), &x, 1);
+    }
+    int endianInvVal = __builtin_bswap32(inventoryLen);
+    memcpy(data + (raw_data.length() / 2) - 4, &endianInvVal, 4);
+    endianInvVal = __builtin_bswap32(this->inv.inv_size);
+    memcpy(data + (raw_data.length() / 2) - 8, &endianInvVal, 4);
+    int val = 0;
+    for (int i = 0; i < inventoryLen; i++)
+    {
+        val = 0;
+        val |= this->inv.items.at(i).item_id;
+        val |= this->inv.items.at(i).item_count << 16;
+        val &= 0x00FFFFFF;
+        val |= 0x00 << 24;
+        memcpy(data + (i*4) + (raw_data.length() / 2), &val, 4);
+    }
+    ENetPacket * packet = enet_packet_create(data,
+                                              packetLen,
+                                              ENET_PACKET_FLAG_RELIABLE);
+    enet_peer_send(peer, 0, packet);
+}
+
+void objects::player::send_nothing_happend(int x, int y) {
+    player_movement data{};
+    data.packet_type = 0x8;
+    data.planting_tree = 0;
+    data.net_id = -1;
+    data.x = x;
+    data.y = y;
+    data.punch_x = x;
+    data.punch_y = y;
+    this->send_player_movement(data);
 }

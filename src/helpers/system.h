@@ -9,7 +9,7 @@
 #endif
 
 namespace growtopia::helpers {
-    void mkdir(std::string path);
+    void makedir(std::string path);
 }
 
 
